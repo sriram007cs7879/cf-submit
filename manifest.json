@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "CF Submit",
   "version": "1.0.0",
   "description": "Submit and test Codeforces solutions directly from the problem page",
@@ -8,7 +8,9 @@
   },
   "permissions": [
     "activeTab",
-    "cookies",
+    "cookies"
+  ],
+  "host_permissions": [
     "*://codeforces.com/*",
     "*://ce.judge0.com/*"
   ],
@@ -25,6 +27,6 @@
     }
   ],
   "background": {
-    "scripts": ["background.js"]
+    "service_worker": "background.js"
   }
 }

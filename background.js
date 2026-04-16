@@ -1,12 +1,12 @@
-// CF Submit — Background Script
-// Handles authenticated requests to Codeforces (has cookie access)
+// CF Submit — Background Service Worker (Chrome MV3)
+// Handles authenticated requests to Codeforces and Judge0
 
-browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "submit") {
     handleSubmit(msg).then(sendResponse).catch(err => {
       sendResponse({ success: false, error: err.message });
     });
-    return true; // async response
+    return true;
   }
 
   if (msg.type === "getHandle") {
@@ -25,11 +25,8 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 async function getHandle() {
-  // Fetch the Codeforces main page and extract the logged-in handle
   const resp = await fetch("https://codeforces.com", { credentials: "include" });
   const html = await resp.text();
-
-  // Look for the handle in the header link
   const match = html.match(/\/profile\/([^"]+)"/);
   if (match) {
     return { handle: match[1] };
@@ -57,7 +54,6 @@ async function handleRunCode({ languageId, source, stdin }) {
 }
 
 async function handleSubmit({ contestId, problemIndex, langId, source }) {
-  // Step 1: Fetch submit page to get CSRF token and other hidden fields
   const submitUrl = `https://codeforces.com/contest/${contestId}/submit`;
   const resp = await fetch(submitUrl, { credentials: "include" });
 
@@ -67,22 +63,18 @@ async function handleSubmit({ contestId, problemIndex, langId, source }) {
 
   const html = await resp.text();
 
-  // Extract csrf_token
   const csrfMatch = html.match(/name=['"]csrf_token['"][^>]*value=['"]([^'"]+)['"]/);
   if (!csrfMatch) {
     throw new Error("Could not find csrf_token. Are you logged in to Codeforces?");
   }
   const csrfToken = csrfMatch[1];
 
-  // Extract ftaa
   const ftaaMatch = html.match(/name=['"]ftaa['"][^>]*value=['"]([^'"]+)['"]/);
   const ftaa = ftaaMatch ? ftaaMatch[1] : "";
 
-  // Extract bfaa
   const bfaaMatch = html.match(/name=['"]bfaa['"][^>]*value=['"]([^'"]+)['"]/);
   const bfaa = bfaaMatch ? bfaaMatch[1] : "";
 
-  // Step 2: Build form data and POST
   const formData = new URLSearchParams();
   formData.append("csrf_token", csrfToken);
   formData.append("ftaa", ftaa);
@@ -104,7 +96,6 @@ async function handleSubmit({ contestId, problemIndex, langId, source }) {
     body: formData.toString(),
   });
 
-  // Codeforces redirects to /contest/{id}/my on success
   if (postResp.ok || postResp.redirected) {
     return { success: true };
   } else {

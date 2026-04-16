@@ -79,7 +79,7 @@
 
   // Fallback: ask background script
   if (!userHandle) {
-    browser.runtime.sendMessage({ type: "getHandle" }).then((resp) => {
+    chrome.runtime.sendMessage({ type: "getHandle" }, (resp) => {
       if (resp && resp.handle) userHandle = resp.handle;
     });
   }
@@ -191,15 +191,20 @@
 
   async function runCode(source, input, languageId) {
     return new Promise((resolve, reject) => {
-      browser.runtime.sendMessage({
+      chrome.runtime.sendMessage({
         type: "runCode",
         languageId,
         source,
         stdin: input,
-      }).then(resp => {
-        if (resp.error) reject(new Error(resp.error));
-        else resolve(resp.result);
-      }).catch(reject);
+      }, resp => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else if (resp.error) {
+          reject(new Error(resp.error));
+        } else {
+          resolve(resp.result);
+        }
+      });
     });
   }
 
@@ -360,12 +365,20 @@
     hideVerdict();
 
     try {
-      const resp = await browser.runtime.sendMessage({
-        type: "submit",
-        contestId,
-        problemIndex,
-        langId,
-        source,
+      const resp = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({
+          type: "submit",
+          contestId,
+          problemIndex,
+          langId,
+          source,
+        }, resp => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(resp);
+          }
+        });
       });
 
       if (resp.success) {
