@@ -37,20 +37,20 @@ async function getHandle() {
   return { handle: null };
 }
 
-async function handleRunCode({ language, version, source, stdin }) {
-  const resp = await fetch("https://emkc.run/api/v2/piston/execute", {
+async function handleRunCode({ languageId, source, stdin }) {
+  const resp = await fetch("https://ce.judge0.com/submissions?base64_encoded=false&wait=true", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      language,
-      version,
-      files: [{ content: source }],
-      stdin,
-      run_timeout: 10000,
+      language_id: languageId,
+      source_code: source,
+      stdin: stdin,
+      cpu_time_limit: 5,
+      memory_limit: 256000,
     }),
   });
   if (!resp.ok) {
-    throw new Error(`Piston API error (HTTP ${resp.status})`);
+    throw new Error(`Judge0 API error (HTTP ${resp.status})`);
   }
   const result = await resp.json();
   return { result };

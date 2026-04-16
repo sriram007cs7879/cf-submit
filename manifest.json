@@ -10,7 +10,7 @@
     "activeTab",
     "cookies",
     "*://codeforces.com/*",
-    "*://emkc.run/*"
+    "*://ce.judge0.com/*"
   ],
   "content_scripts": [
     {

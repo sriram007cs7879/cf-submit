@@ -160,41 +160,40 @@
   const btnRun = document.getElementById("cf-btn-run");
   const samplesPanel = document.getElementById("cf-samples-panel");
 
-  // Map language select values to Piston API language/version
-  function getLangForPiston(langId) {
+  // Map CF language select values to Judge0 language IDs
+  function getJudge0LangId(langId) {
     const map = {
-      "89": { language: "c++", version: "10.2.0" },
-      "61": { language: "c++", version: "10.2.0" },
-      "54": { language: "c++", version: "10.2.0" },
-      "52": { language: "c++", version: "10.2.0" },
-      "73": { language: "c++", version: "10.2.0" },
-      "50": { language: "c++", version: "10.2.0" },
-      "65": { language: "csharp.net", version: "5.0.201" },
-      "32": { language: "go", version: "1.16.2" },
-      "60": { language: "java", version: "15.0.2" },
-      "87": { language: "java", version: "15.0.2" },
-      "83": { language: "kotlin", version: "1.8.20" },
-      "36": { language: "python", version: "2.7.18" },
-      "41": { language: "python", version: "3.10.0" },
-      "31": { language: "python", version: "3.10.0" },
-      "70": { language: "python", version: "3.10.0" },
-      "40": { language: "python", version: "3.10.0" },
-      "43": { language: "c", version: "10.2.0" },
-      "80": { language: "c", version: "10.2.0" },
-      "67": { language: "ruby", version: "3.0.1" },
-      "75": { language: "rust", version: "1.68.2" },
-      "34": { language: "javascript", version: "18.15.0" },
-      "55": { language: "javascript", version: "18.15.0" },
+      "89": 105,  // C++ GCC 14.1.0
+      "61": 105,
+      "54": 105,
+      "52": 76,   // C++ Clang
+      "73": 105,
+      "50": 105,
+      "65": 51,   // C# Mono
+      "32": 107,  // Go
+      "60": 91,   // Java 17
+      "87": 91,
+      "83": 111,  // Kotlin
+      "36": 70,   // Python 2
+      "41": 109,  // Python 3
+      "31": 109,
+      "70": 109,
+      "40": 109,
+      "43": 103,  // C GCC 14.1.0
+      "80": 103,
+      "67": 72,   // Ruby
+      "75": 108,  // Rust
+      "34": 102,  // JavaScript Node.js
+      "55": 102,
     };
-    return map[langId] || { language: "c++", version: "10.2.0" };
+    return map[langId] || 105;
   }
 
-  async function runCodeOnPiston(source, input, lang) {
+  async function runCode(source, input, languageId) {
     return new Promise((resolve, reject) => {
       browser.runtime.sendMessage({
         type: "runCode",
-        language: lang.language,
-        version: lang.version,
+        languageId,
         source,
         stdin: input,
       }).then(resp => {
@@ -217,7 +216,7 @@
     }
 
     const langId = document.getElementById("cf-lang-select").value;
-    const lang = getLangForPiston(langId);
+    const judge0LangId = getJudge0LangId(langId);
 
     btnRun.disabled = true;
     btnSubmit.disabled = true;
@@ -261,15 +260,18 @@
       const yourOutputPre = caseEl.querySelector(".cf-your-output");
 
       try {
-        const result = await runCodeOnPiston(source, samples[i].input, lang);
+        const result = await runCode(source, samples[i].input, judge0LangId);
+        const statusId = result.status.id;
 
-        // Check for compile error
-        if (result.compile && result.compile.stderr) {
-          yourOutputPre.textContent = result.compile.stderr;
+        // Status IDs: 3=Accepted, 4=Wrong Answer, 5=TLE, 6=Compilation Error,
+        // 7-12=Runtime errors, 13=Internal Error, 14=Exec Format Error
+
+        if (statusId === 6) {
+          // Compilation Error
+          yourOutputPre.textContent = result.compile_output || "Compilation Error";
           statusBadge.textContent = "Compilation Error";
           statusBadge.className = "cf-run-status cf-run-fail";
           allPassed = false;
-          // Skip remaining tests on compile error
           for (let j = i + 1; j < samples.length; j++) {
             const otherCase = document.getElementById(`cf-run-case-${j}`);
             const otherBadge = otherCase.querySelector(".cf-run-status");
@@ -281,16 +283,7 @@
           break;
         }
 
-        const runResult = result.run;
-        if (runResult.stderr && runResult.code !== 0) {
-          yourOutputPre.textContent = runResult.stderr;
-          statusBadge.textContent = "Runtime Error";
-          statusBadge.className = "cf-run-status cf-run-fail";
-          allPassed = false;
-          continue;
-        }
-
-        if (runResult.signal === "SIGKILL" || runResult.signal === "SIGXCPU") {
+        if (statusId === 5) {
           yourOutputPre.textContent = "Time Limit Exceeded";
           statusBadge.textContent = "TLE";
           statusBadge.className = "cf-run-status cf-run-fail";
@@ -298,7 +291,15 @@
           continue;
         }
 
-        const actual = (runResult.stdout || "").trim();
+        if (statusId >= 7 && statusId <= 12) {
+          yourOutputPre.textContent = result.stderr || result.message || "Runtime Error";
+          statusBadge.textContent = "Runtime Error";
+          statusBadge.className = "cf-run-status cf-run-fail";
+          allPassed = false;
+          continue;
+        }
+
+        const actual = (result.stdout || "").trim();
         const expected = samples[i].output.trim();
         yourOutputPre.textContent = actual || "(empty)";
 
