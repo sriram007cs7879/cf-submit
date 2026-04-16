@@ -15,6 +15,13 @@ browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     });
     return true;
   }
+
+  if (msg.type === "runCode") {
+    handleRunCode(msg).then(sendResponse).catch(err => {
+      sendResponse({ error: err.message });
+    });
+    return true;
+  }
 });
 
 async function getHandle() {
@@ -28,6 +35,25 @@ async function getHandle() {
     return { handle: match[1] };
   }
   return { handle: null };
+}
+
+async function handleRunCode({ language, version, source, stdin }) {
+  const resp = await fetch("https://emkc.run/api/v2/piston/execute", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      language,
+      version,
+      files: [{ content: source }],
+      stdin,
+      run_timeout: 10000,
+    }),
+  });
+  if (!resp.ok) {
+    throw new Error(`Piston API error (HTTP ${resp.status})`);
+  }
+  const result = await resp.json();
+  return { result };
 }
 
 async function handleSubmit({ contestId, problemIndex, langId, source }) {

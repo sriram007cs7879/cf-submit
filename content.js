@@ -190,21 +190,18 @@
   }
 
   async function runCodeOnPiston(source, input, lang) {
-    const resp = await fetch("https://emkc.run/api/v2/piston/execute", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    return new Promise((resolve, reject) => {
+      browser.runtime.sendMessage({
+        type: "runCode",
         language: lang.language,
         version: lang.version,
-        files: [{ content: source }],
+        source,
         stdin: input,
-        run_timeout: 10000,
-      }),
+      }).then(resp => {
+        if (resp.error) reject(new Error(resp.error));
+        else resolve(resp.result);
+      }).catch(reject);
     });
-    if (!resp.ok) {
-      throw new Error(`Piston API error (HTTP ${resp.status})`);
-    }
-    return resp.json();
   }
 
   btnRun.addEventListener("click", async () => {
