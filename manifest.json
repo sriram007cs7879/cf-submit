@@ -1,0 +1,29 @@
+{
+  "manifest_version": 2,
+  "name": "CF Submit",
+  "version": "1.0.0",
+  "description": "Submit and test Codeforces solutions directly from the problem page",
+  "icons": {
+    "48": "icons/icon.png"
+  },
+  "permissions": [
+    "activeTab",
+    "cookies",
+    "*://codeforces.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://codeforces.com/problemset/problem/*/*",
+        "*://codeforces.com/contest/*/problem/*",
+        "*://codeforces.com/gym/*/problem/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  }
+}

@@ -1,0 +1,215 @@
+/* CF Submit — Injected Styles */
+
+#cf-submit-panel {
+  margin: 20px 0;
+  padding: 16px;
+  border: 2px solid #1a73e8;
+  border-radius: 8px;
+  background: #fafbfc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+#cf-submit-panel h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #1a73e8;
+}
+
+/* Editor */
+#cf-submit-editor {
+  width: 100%;
+  min-height: 300px;
+  padding: 10px;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #f6f8fa;
+  color: #24292f;
+  resize: vertical;
+  tab-size: 4;
+  box-sizing: border-box;
+}
+
+#cf-submit-editor:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+}
+
+/* Controls row */
+.cf-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.cf-controls select {
+  padding: 6px 10px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+}
+
+.cf-controls button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#cf-btn-run {
+  background: #2ea043;
+  color: white;
+}
+#cf-btn-run:hover {
+  background: #238636;
+}
+
+#cf-btn-submit {
+  background: #1a73e8;
+  color: white;
+}
+#cf-btn-submit:hover {
+  background: #1557b0;
+}
+
+#cf-btn-submit:disabled,
+#cf-btn-run:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Status line */
+#cf-status {
+  margin-left: auto;
+  font-size: 13px;
+  color: #57606a;
+}
+
+/* Verdict panel */
+#cf-verdict-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  display: none;
+}
+
+#cf-verdict-panel.show {
+  display: block;
+}
+
+#cf-verdict-panel.accepted {
+  background: #dafbe1;
+  border: 1px solid #2ea043;
+  color: #1a7f37;
+}
+
+#cf-verdict-panel.rejected {
+  background: #ffebe9;
+  border: 1px solid #cf222e;
+  color: #cf222e;
+}
+
+#cf-verdict-panel.testing {
+  background: #fff8c5;
+  border: 1px solid #bf8700;
+  color: #735c0f;
+}
+
+#cf-verdict-panel.info {
+  background: #ddf4ff;
+  border: 1px solid #54aeff;
+  color: #0969da;
+}
+
+.cf-verdict-text {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.cf-verdict-details {
+  margin-top: 4px;
+  font-size: 12px;
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* Sample I/O panel */
+#cf-samples-panel {
+  margin-top: 12px;
+  display: none;
+}
+
+#cf-samples-panel.show {
+  display: block;
+}
+
+.cf-sample-case {
+  margin-bottom: 10px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cf-sample-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  font-weight: 600;
+  font-size: 12px;
+  color: #57606a;
+}
+
+.cf-sample-header button {
+  padding: 2px 8px;
+  font-size: 11px;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  color: #57606a;
+}
+.cf-sample-header button:hover {
+  background: #f3f4f6;
+}
+
+.cf-sample-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.cf-sample-col {
+  padding: 8px 10px;
+}
+
+.cf-sample-col:first-child {
+  border-right: 1px solid #d0d7de;
+}
+
+.cf-sample-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #57606a;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.cf-sample-col pre {
+  margin: 0;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  color: #24292f;
+}
