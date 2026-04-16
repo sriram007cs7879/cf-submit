@@ -9,7 +9,8 @@
   "permissions": [
     "activeTab",
     "cookies",
-    "*://codeforces.com/*"
+    "*://codeforces.com/*",
+    "*://emkc.run/*"
   ],
   "content_scripts": [
     {

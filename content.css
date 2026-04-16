@@ -190,11 +190,15 @@
   grid-template-columns: 1fr 1fr;
 }
 
+.cf-sample-body.cf-sample-body-3col {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
 .cf-sample-col {
   padding: 8px 10px;
 }
 
-.cf-sample-col:first-child {
+.cf-sample-col:not(:last-child) {
   border-right: 1px solid #d0d7de;
 }
 
@@ -212,4 +216,27 @@
   font-size: 12px;
   white-space: pre-wrap;
   color: #24292f;
+}
+
+/* Run status badges */
+.cf-run-status {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.cf-run-pass {
+  background: #dafbe1;
+  color: #1a7f37;
+}
+
+.cf-run-fail {
+  background: #ffebe9;
+  color: #cf222e;
+}
+
+.cf-run-pending {
+  background: #fff8c5;
+  color: #735c0f;
 }

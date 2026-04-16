@@ -155,32 +155,88 @@
   });
 
   // ========================================
-  // 6. Run button — show sample I/O
+  // 6. Run button — execute code against samples
   // ========================================
   const btnRun = document.getElementById("cf-btn-run");
   const samplesPanel = document.getElementById("cf-samples-panel");
 
-  btnRun.addEventListener("click", () => {
+  // Map language select values to Piston API language/version
+  function getLangForPiston(langId) {
+    const map = {
+      "89": { language: "c++", version: "10.2.0" },
+      "61": { language: "c++", version: "10.2.0" },
+      "54": { language: "c++", version: "10.2.0" },
+      "52": { language: "c++", version: "10.2.0" },
+      "73": { language: "c++", version: "10.2.0" },
+      "50": { language: "c++", version: "10.2.0" },
+      "65": { language: "csharp.net", version: "5.0.201" },
+      "32": { language: "go", version: "1.16.2" },
+      "60": { language: "java", version: "15.0.2" },
+      "87": { language: "java", version: "15.0.2" },
+      "83": { language: "kotlin", version: "1.8.20" },
+      "36": { language: "python", version: "2.7.18" },
+      "41": { language: "python", version: "3.10.0" },
+      "31": { language: "python", version: "3.10.0" },
+      "70": { language: "python", version: "3.10.0" },
+      "40": { language: "python", version: "3.10.0" },
+      "43": { language: "c", version: "10.2.0" },
+      "80": { language: "c", version: "10.2.0" },
+      "67": { language: "ruby", version: "3.0.1" },
+      "75": { language: "rust", version: "1.68.2" },
+      "34": { language: "javascript", version: "18.15.0" },
+      "55": { language: "javascript", version: "18.15.0" },
+    };
+    return map[langId] || { language: "c++", version: "10.2.0" };
+  }
+
+  async function runCodeOnPiston(source, input, lang) {
+    const resp = await fetch("https://emkc.run/api/v2/piston/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        language: lang.language,
+        version: lang.version,
+        files: [{ content: source }],
+        stdin: input,
+        run_timeout: 10000,
+      }),
+    });
+    if (!resp.ok) {
+      throw new Error(`Piston API error (HTTP ${resp.status})`);
+    }
+    return resp.json();
+  }
+
+  btnRun.addEventListener("click", async () => {
+    const source = editor.value.trim();
+    if (!source) {
+      showVerdict("Please paste your code first.", "info");
+      return;
+    }
+
     if (samples.length === 0) {
       showVerdict("No sample test cases found on this page.", "info");
       return;
     }
 
-    // Toggle: if already showing, hide
-    if (samplesPanel.classList.contains("show")) {
-      samplesPanel.classList.remove("show");
-      return;
-    }
+    const langId = document.getElementById("cf-lang-select").value;
+    const lang = getLangForPiston(langId);
 
+    btnRun.disabled = true;
+    btnSubmit.disabled = true;
+    statusEl.textContent = "Running...";
+    hideVerdict();
+
+    // Show placeholder while running
     let html = "";
     samples.forEach((s, i) => {
       html += `
-        <div class="cf-sample-case">
+        <div class="cf-sample-case" id="cf-run-case-${i}">
           <div class="cf-sample-header">
             <span>Sample ${i + 1}</span>
-            <button class="cf-copy-input" data-idx="${i}">Copy Input</button>
+            <span class="cf-run-status cf-run-pending">Running...</span>
           </div>
-          <div class="cf-sample-body">
+          <div class="cf-sample-body cf-sample-body-3col">
             <div class="cf-sample-col">
               <div class="cf-sample-label">Input</div>
               <pre>${escapeHtml(s.input)}</pre>
@@ -189,24 +245,92 @@
               <div class="cf-sample-label">Expected Output</div>
               <pre>${escapeHtml(s.output)}</pre>
             </div>
+            <div class="cf-sample-col">
+              <div class="cf-sample-label">Your Output</div>
+              <pre class="cf-your-output">...</pre>
+            </div>
           </div>
         </div>
       `;
     });
-
     samplesPanel.innerHTML = html;
     samplesPanel.classList.add("show");
 
-    // Attach copy handlers
-    samplesPanel.querySelectorAll(".cf-copy-input").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const idx = parseInt(btn.dataset.idx);
-        navigator.clipboard.writeText(samples[idx].input).then(() => {
-          btn.textContent = "Copied!";
-          setTimeout(() => (btn.textContent = "Copy Input"), 1500);
-        });
-      });
-    });
+    let allPassed = true;
+
+    for (let i = 0; i < samples.length; i++) {
+      const caseEl = document.getElementById(`cf-run-case-${i}`);
+      const statusBadge = caseEl.querySelector(".cf-run-status");
+      const yourOutputPre = caseEl.querySelector(".cf-your-output");
+
+      try {
+        const result = await runCodeOnPiston(source, samples[i].input, lang);
+
+        // Check for compile error
+        if (result.compile && result.compile.stderr) {
+          yourOutputPre.textContent = result.compile.stderr;
+          statusBadge.textContent = "Compilation Error";
+          statusBadge.className = "cf-run-status cf-run-fail";
+          allPassed = false;
+          // Skip remaining tests on compile error
+          for (let j = i + 1; j < samples.length; j++) {
+            const otherCase = document.getElementById(`cf-run-case-${j}`);
+            const otherBadge = otherCase.querySelector(".cf-run-status");
+            const otherOutput = otherCase.querySelector(".cf-your-output");
+            otherBadge.textContent = "Skipped";
+            otherBadge.className = "cf-run-status cf-run-pending";
+            otherOutput.textContent = "—";
+          }
+          break;
+        }
+
+        const runResult = result.run;
+        if (runResult.stderr && runResult.code !== 0) {
+          yourOutputPre.textContent = runResult.stderr;
+          statusBadge.textContent = "Runtime Error";
+          statusBadge.className = "cf-run-status cf-run-fail";
+          allPassed = false;
+          continue;
+        }
+
+        if (runResult.signal === "SIGKILL" || runResult.signal === "SIGXCPU") {
+          yourOutputPre.textContent = "Time Limit Exceeded";
+          statusBadge.textContent = "TLE";
+          statusBadge.className = "cf-run-status cf-run-fail";
+          allPassed = false;
+          continue;
+        }
+
+        const actual = (runResult.stdout || "").trim();
+        const expected = samples[i].output.trim();
+        yourOutputPre.textContent = actual || "(empty)";
+
+        if (actual === expected) {
+          statusBadge.textContent = "Passed";
+          statusBadge.className = "cf-run-status cf-run-pass";
+        } else {
+          statusBadge.textContent = "Wrong Answer";
+          statusBadge.className = "cf-run-status cf-run-fail";
+          allPassed = false;
+        }
+      } catch (err) {
+        yourOutputPre.textContent = err.message;
+        statusBadge.textContent = "Error";
+        statusBadge.className = "cf-run-status cf-run-fail";
+        allPassed = false;
+      }
+    }
+
+    btnRun.disabled = false;
+    btnSubmit.disabled = false;
+
+    if (allPassed) {
+      statusEl.textContent = "All samples passed!";
+      showVerdict(`All ${samples.length} sample test(s) passed!`, "accepted");
+    } else {
+      statusEl.textContent = "Some samples failed.";
+      showVerdict("Some sample tests failed. Check output below.", "rejected");
+    }
   });
 
   // ========================================
